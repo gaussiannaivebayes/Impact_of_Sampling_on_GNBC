@@ -1,0 +1,91 @@
+#R Packages Required for the Analysis
+library(caret)
+library(e1071)
+#Import dataset say data1
+data1$diabetes <- as.factor(data1$diabetes)
+
+accuracies_STS <- c()
+recalls_STS <- c()
+precisions_STS <- c()
+f1_scores_STS <- c()
+
+for (i in 1:100) {
+strata <- data1$diabetes
+sample <- createDataPartition(strata, p = 0.75, list = FALSE)
+train <- data1[sample, ]
+test <- data1[-sample, ]
+
+model <- naiveBayes(diabetes ~ ., data = train)
+
+predictions <- predict(model, test)
+
+accuracy <- mean(predictions == test$diabetes)
+
+accuracies_STS[i] <- accuracy
+# Create a confusion matrix
+cm <- confusionMatrix(predictions, test$diabetes)
+
+recall <- cm[["byClass"]]["Recall"]
+precision <- cm[["byClass"]]["Precision"]
+f1 <- cm[["byClass"]]["F1"]
+
+recalls_STS[i] <- recall
+precisions_STS[i] <- precision
+f1_scores_STS[i] <- f1
+}
+
+accuracies_STS
+mean(accuracies_STS)
+# Print the results
+print("Accuracies:")
+print(accuracies_STS)
+mean_accuracy <- mean(accuracies_STS)
+print(paste("Mean Accuracy:", mean_accuracy))
+
+print("Recalls:")
+print(recalls_STS)
+mean_recall <- mean(recalls_STS)
+print(paste("Mean Recall:", mean_recall))
+
+print("Precisions:")
+print(precisions_STS)
+mean_precision <- mean(precisions_STS)
+print(paste("Mean Precision:", mean_precision))
+
+print("F1-Scores:")
+print(f1_scores_STS)
+mean_f1 <- mean(f1_scores_STS)
+print(paste("Mean F1-Score:", mean_f1))
+
+
+
+# Define a custom scaling function
+custom_scale <- function(x, new_min, new_max) {
+  scaled <- (x - min(x)) / (max(x) - min(x))  # Scale between 0 and 1
+  scaled * (new_max - new_min) + new_min      # Scale to the desired range
+}
+
+# Define the new range (1 to 2)
+new_min <- 0.5
+new_max <- 1
+
+# Apply custom scaling to each group
+scaled_accuracies_STS <- custom_scale(accuracies_STS, new_min, new_max)
+scaled_recalls_STS <- custom_scale(recalls_STS, new_min, new_max)
+scaled_precisions_STS <- custom_scale(precisions_STS, new_min, new_max)
+scaled_f1_scores_STS <- custom_scale(f1_scores_STS, new_min, new_max)
+
+# Create the boxplot with the scaled data
+boxplot(
+  scaled_accuracies_STS, scaled_recalls_STS, scaled_precisions_STS, scaled_f1_scores_STS,
+  names = c("WOS", "SYS", "SRS", "STS")
+)
+# Define colors for each group
+box_colors <- c("red", "blue", "green", "purple")
+
+# Create the boxplot with scaled data and specified colors
+boxplot(
+  scaled_accuracies_WOS, scaled_accuracies_SYS, scaled_accuracies_SRS, scaled_accuracies_STS,
+  names = c("WOS", "SYS", "SRS", "STS"),
+  col = box_colors
+)
